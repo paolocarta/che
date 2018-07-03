@@ -53,9 +53,12 @@ import org.eclipse.che.selenium.core.requestfactory.TestUserHttpJsonRequestFacto
 import org.eclipse.che.selenium.core.requestfactory.TestUserHttpJsonRequestFactoryCreator;
 import org.eclipse.che.selenium.core.user.DefaultTestUser;
 import org.eclipse.che.selenium.core.user.TestUserFactory;
+import org.eclipse.che.selenium.core.webdriver.DownloadedFileIntoGridFileUtil;
+import org.eclipse.che.selenium.core.webdriver.DownloadedFileLocallyUtil;
 import org.eclipse.che.selenium.core.webdriver.DownloadedFileUtil;
-import org.eclipse.che.selenium.core.webdriver.DownloadedIntoGridFileUtilImpl;
-import org.eclipse.che.selenium.core.webdriver.DownloadedLocallyFileUtilImpl;
+import org.eclipse.che.selenium.core.webdriver.UploadFileIntoGridUtil;
+import org.eclipse.che.selenium.core.webdriver.UploadFileLocallyUtil;
+import org.eclipse.che.selenium.core.webdriver.UploadFileUtil;
 import org.eclipse.che.selenium.core.webdriver.log.WebDriverLogsReaderFactory;
 import org.eclipse.che.selenium.core.workspace.CheTestWorkspaceProvider;
 import org.eclipse.che.selenium.core.workspace.CheTestWorkspaceUrlResolver;
@@ -141,9 +144,11 @@ public class CheSeleniumSuiteModule extends AbstractModule {
 
     boolean gridMode = Boolean.valueOf(System.getProperty("grid.mode"));
     if (gridMode) {
-      bind(DownloadedFileUtil.class).to(DownloadedIntoGridFileUtilImpl.class);
+      bind(DownloadedFileUtil.class).to(DownloadedFileIntoGridFileUtil.class);
+      bind(UploadFileUtil.class).to(UploadFileIntoGridUtil.class);
     } else {
-      bind(DownloadedFileUtil.class).to(DownloadedLocallyFileUtilImpl.class);
+      bind(DownloadedFileUtil.class).to(DownloadedFileLocallyUtil.class);
+      bind(UploadFileUtil.class).to(UploadFileLocallyUtil.class);
     }
   }
 

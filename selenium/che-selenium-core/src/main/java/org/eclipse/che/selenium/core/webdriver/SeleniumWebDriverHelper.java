@@ -29,6 +29,8 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.visibilityOfElem
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import org.eclipse.che.selenium.core.SeleniumWebDriver;
@@ -40,26 +42,27 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** @author Ihor Okhrimenko */
 @Singleton
 public class SeleniumWebDriverHelper {
-  protected final int DEFAULT_TIMEOUT = LOAD_PAGE_TIMEOUT_SEC;
-  protected final SeleniumWebDriver seleniumWebDriver;
-  protected final WebDriverWaitFactory webDriverWaitFactory;
-  protected final ActionsFactory actionsFactory;
-  protected final Logger LOG = LoggerFactory.getLogger(SeleniumWebDriverHelper.class);
+  private final int DEFAULT_TIMEOUT = LOAD_PAGE_TIMEOUT_SEC;
+
+  private final SeleniumWebDriver seleniumWebDriver;
+  private final WebDriverWaitFactory webDriverWaitFactory;
+  private final ActionsFactory actionsFactory;
+  private final UploadFileUtil uploadFileUtil;
 
   @Inject
   public SeleniumWebDriverHelper(
       SeleniumWebDriver seleniumWebDriver,
       WebDriverWaitFactory webDriverWaitFactory,
-      ActionsFactory actionsFactory) {
+      ActionsFactory actionsFactory,
+      UploadFileUtil uploadFileUtil) {
     this.seleniumWebDriver = seleniumWebDriver;
     this.webDriverWaitFactory = webDriverWaitFactory;
     this.actionsFactory = actionsFactory;
+    this.uploadFileUtil = uploadFileUtil;
   }
 
   /**
@@ -1288,5 +1291,31 @@ public class SeleniumWebDriverHelper {
     action.clickAndHold(waitVisibility(element)).perform();
     WaitUtils.sleepQuietly(holdingTimeout);
     action.release(waitVisibility(element)).perform();
+  }
+
+  /**
+   * Link resource to upload to input element of file type.
+   *
+   * @param elementLocator locator of web element which is being used to upload the file
+   * @param localResource path to the local file or directory
+   * @throws IOException if there is a problem with preparing file to upload
+   * @throws IllegalArgumentException if web element is not input of file type
+   */
+  public void selectResourceToUpload(By elementLocator, Path localResource) throws IOException {
+    WebElement webElement = seleniumWebDriver.findElement(elementLocator);
+    if (!"file".equalsIgnoreCase(waitVisibilityAndGetAttribute(webElement, "type"))
+        || !"input".equalsIgnoreCase(webElement.getTagName())) {
+      throw new IllegalArgumentException(
+          String.format("Web element '%s' is not input of file type.", webElement));
+    }
+
+    Path readyToUploadFile;
+    if (localResource.toFile().isFile()) {
+      readyToUploadFile = uploadFileUtil.prepareFileToUpload(seleniumWebDriver, localResource);
+    } else {
+      readyToUploadFile = uploadFileUtil.prepareDirectoryToUpload(seleniumWebDriver, localResource);
+    }
+
+    webElement.sendKeys(readyToUploadFile.toString());
   }
 }
